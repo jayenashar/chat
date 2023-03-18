@@ -8,6 +8,7 @@ body {
     display: grid;
     grid-template-columns: auto min-content;
     grid-template-rows: minmax(0, 1fr) auto;
+    grid-row-gap: 1em;
     font-family: 'Roboto', sans-serif;
 }
 
@@ -36,12 +37,27 @@ body {
     grid-column-gap: 1em;
 }
 
+.placeholder {
+    opacity: 0.5;
+}
+
 .new-message .name {
     /* make a span look like a text input */
     display: inline-block;
     padding: 0.5em;
     border: 1px solid white;
     border-radius: 0.25em;
+}
+
+.new-message .text {
+    /* make a span look like a textarea */
+    display: inline-block;
+    padding: 0.5em;
+    border: 1px solid white;
+    border-radius: 0.25em;
+    resize: vertical;
+    min-height: 3.6em;
+    line-height: 1.2em;
 }
 
 textarea {

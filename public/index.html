@@ -10,13 +10,9 @@
     <div class="messages"></div>
     <div class="users"></div>
     <div class="new-message">
-      <span class="name" aria-label="your name">jayen</span>
-      <textarea
-        placeholder="I did ... I expected ... but I got ..."
-        disabled
-        maxlength="10125"
-        aria-label="your message"
-      ></textarea>
+      <span class="name placeholder" aria-label="your name">jayen</span>
+      <span class="text placeholder" aria-label="your message"></span>
+      <!-- TODO: show character count to limit of 10125 characters -->
       <button disabled>Send</button>
     </div>
 
@@ -54,7 +50,7 @@
 
       // get user from firebase-auth
       const nameInput = document.querySelector(".new-message .name");
-      const messageInput = document.querySelector("textarea");
+      const messageInput = document.querySelector(".new-message .text");
       const button = document.querySelector("button");
 
       let uid = null;
@@ -62,8 +58,9 @@
         if (user) {
           // User is signed in.
           nameInput.innerHTML = user.displayName;
+          nameInput.classList.remove("placeholder");
           localStorage.setItem("login_hint", user.email);
-          messageInput.disabled = false;
+          messageInput.contentEditable = true;
           button.disabled = false;
           uid = user.uid;
           const signOut = function () {
@@ -73,7 +70,7 @@
           nameInput.addEventListener("click", signOut);
         } else {
           // No user is signed in.
-          messageInput.disabled = true;
+          messageInput.contentEditable = false;
           button.disabled = true;
           uid = null;
           const signIn = function () {
@@ -98,9 +95,13 @@
 
       // Send message
       const messagesCollection = collection(db, "messages");
+      const messagePlaceholder = `I did ...
+I expected ...
+but I got ...`;
+      messageInput.innerHTML = messagePlaceholder;
       const send = function () {
         const name = nameInput.textContent;
-        const message = messageInput.value;
+        const message = messageInput.innerHTML;
         if (message) {
           addDoc(messagesCollection, {
             name,
@@ -110,14 +111,15 @@
             uid,
           }).catch(function (error) {
             console.error("Error adding document: ", error);
-            const newMessage = messageInput.value;
+            const newMessage = messageInput.textContent;
             if (newMessage) {
-              messageInput.value = message + "\n\n" + newMessage;
+              messageInput.innerHTML = message + "\n\n" + newMessage;
             } else {
-              messageInput.value = message;
+              messageInput.innerHTML = message;
             }
           });
-          messageInput.value = "";
+          messageInput.innerHTML = messagePlaceholder;
+          messageInput.classList.add("placeholder");
         }
       };
       button.addEventListener("click", send);
@@ -127,6 +129,18 @@
             e.preventDefault();
             send();
           }
+        }
+      });
+      messageInput.addEventListener("focus", function () {
+        if (messageInput.classList.contains("placeholder")) {
+          messageInput.innerHTML = "";
+        }
+        messageInput.classList.remove("placeholder");
+      });
+      messageInput.addEventListener("blur", function () {
+        if (!messageInput.textContent) {
+          messageInput.innerHTML = messagePlaceholder;
+          messageInput.classList.add("placeholder");
         }
       });
 
@@ -145,7 +159,6 @@
         messages.innerHTML = "";
         querySnapshot.forEach(function (doc) {
           const data = doc.data();
-          const message = document.createElement("div");
           // random colour based on hash of lowercase of letters in name
           const hash = data.name
             .toLowerCase()
@@ -155,6 +168,10 @@
               return 26 * acc + char.charCodeAt(0) - 'a'.charCodeAt(0);
             }, 0);
           const hue = hash % 360;
+          // replace <br> with newlines
+          const text = data.message.replace(/<br.*?>/g, "\n");
+
+          const message = document.createElement("div");
           message.classList.add("message");
           message.innerHTML = `
             <span class="timestamp">
@@ -163,7 +180,7 @@
             <span class="name" style="color: hsl(${hue}, 100%, 80%)">
               ${data.name}
           </span>
-            <span class="text">${data.message}</span>
+            <span class="text">${text}</span>
           `;
           // prepend
           messages.prepend(message);
