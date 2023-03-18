@@ -3,28 +3,35 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Welcome to jayen's Chat</title>
+    <title>Welcome to jayen chat</title>
   </head>
   <body>
     <div class="messages"></div>
     <div class="users"></div>
     <div class="new-message">
-      <label
-        >Your name: <input type="text" placeholder="jayen" readonly
-      /></label>
+      <label>
+        Your name: <input type="text" placeholder="jayen" readonly />
+      </label>
       <label
         >Message:<textarea
           placeholder="I did ... I expected ... but I got ..."
           disabled
         ></textarea>
       </label>
-      <button>Send</button>
+      <button disabled>Send</button>
     </div>
 
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/9.18.0/firebase-app.js";
-      import { getAuth } from "https://www.gstatic.com/firebasejs/9.18.0/firebase-auth.js";
       import {
+        getAuth,
+        onAuthStateChanged,
+        signInWithPopup,
+        GoogleAuthProvider,
+      } from "https://www.gstatic.com/firebasejs/9.18.0/firebase-auth.js";
+      import {
+        addDoc,
+        collection,
         getFirestore,
         serverTimestamp,
       } from "https://www.gstatic.com/firebasejs/9.18.0/firebase-firestore.js";
@@ -41,25 +48,51 @@
       const auth = getAuth(app);
       const db = getFirestore(app);
 
-      // If user has name in localStorage, use it
-      const name = localStorage.getItem("name") || "";
-      const nameInput = document.querySelector('input[type="text"]');
-      nameInput.value = name;
-      // If user has name, enable message input
-      if (name) {
-        document.querySelector("textarea").disabled = false;
-      } else {
-        // If user doesn't have name, ask for it
-        nameInput.readOnly = false;
-        nameInput.addEventListener("change", function (e) {
-          const name = e.target.value;
-          localStorage.setItem("name", name);
-          document.querySelector("textarea").disabled = false;
-        });
-        nameInput.addEventListener("blur", function (e) {
-          nameInput.readOnly = true;
-        });
-      }
+      // get user from firebase-auth
+      const nameInput = document.querySelector("input");
+      const messageInput = document.querySelector("textarea");
+      const button = document.querySelector("button");
+
+      let uid = null;
+      onAuthStateChanged(auth, function (user) {
+        if (user) {
+          // User is signed in.
+          console.log("user", user);
+          nameInput.value = user.displayName;
+          localStorage.setItem("login_hint", user.email);
+          messageInput.disabled = false;
+          button.disabled = false;
+          uid = user.uid;
+          const signOut = function () {
+            auth.signOut();
+            nameInput.removeEventListener("click", signOut);
+          };
+          nameInput.addEventListener("click", signOut);
+        } else {
+          // No user is signed in.
+          console.log("no user");
+          messageInput.disabled = true;
+          button.disabled = true;
+          uid = null;
+          const signIn = function () {
+            // login with google
+            const provider = new GoogleAuthProvider();
+            const login_hint = localStorage.getItem("login_hint");
+            provider.setCustomParameters({
+              login_hint,
+            });
+            signInWithPopup(auth, provider)
+              .then(function () {
+                nameInput.removeEventListener("click", signIn);
+              })
+              .catch(function (error) {
+                console.error(error);
+                alert(error.toString());
+              });
+          };
+          nameInput.addEventListener("click", signIn);
+        }
+      });
     </script>
   </body>
 </html>
