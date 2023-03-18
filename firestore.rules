@@ -1,8 +1,19 @@
 rules_version = '2';
+
+function isChatRoomValid(chatRoom) {
+  return chatRoom.matches('^http://localhost:\\d+$') ||
+  chatRoom.matches('^https://comp2110-2023-c0[17]\\.jayenashar\\.org$');
+}
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if false;
+    match /messages/{mid} {
+      allow create: if request.auth.uid == request.resource.data.uid &&
+      isChatRoomValid(request.resource.data.chatRoom) &&
+      request.resource.data.timestamp == request.time &&
+      request.resource.data.message.size() > 0 &&
+      request.resource.data.message.size() <= 10125 &&
+      request.resource.data.name == request.auth.token.name;
     }
   }
 }

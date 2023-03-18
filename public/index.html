@@ -16,6 +16,7 @@
         >Message:<textarea
           placeholder="I did ... I expected ... but I got ..."
           disabled
+          maxlength="10125"
         ></textarea>
       </label>
       <button disabled>Send</button>
@@ -91,6 +92,44 @@
               });
           };
           nameInput.addEventListener("click", signIn);
+        }
+      });
+
+      // Send message
+      const messagesCollection = collection(db, "messages");
+      const send = function () {
+        const name = nameInput.value;
+        const message = messageInput.value;
+        if (message) {
+          addDoc(messagesCollection, {
+            name,
+            message,
+            timestamp: serverTimestamp(),
+            chatRoom: location.origin,
+            uid,
+          })
+            .then(function (docRef) {
+              console.log("Document written with ID: ", docRef.id);
+            })
+            .catch(function (error) {
+              console.error("Error adding document: ", error);
+              const newMessage = messageInput.value;
+              if (newMessage) {
+                messageInput.value = message + "\n\n" + newMessage;
+              } else {
+                messageInput.value = message;
+              }
+            });
+          messageInput.value = "";
+        }
+      };
+      button.addEventListener("click", send);
+      messageInput.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") {
+          if (!e.shiftKey && !e.ctrlKey && !e.altKey) {
+            e.preventDefault();
+            send();
+          }
         }
       });
     </script>
