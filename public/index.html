@@ -1,23 +1,33 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Welcome to jayen's Chat</title>
   </head>
   <body>
     <div class="messages"></div>
     <div class="users"></div>
     <div class="new-message">
-      <label>Your name: <input type="text" placeholder="jayen" readonly></label>
-      <label>Message:<textarea placeholder="I did ... I expected ... but I got ..." disabled></textarea></label>
+      <label
+        >Your name: <input type="text" placeholder="jayen" readonly
+      /></label>
+      <label
+        >Message:<textarea
+          placeholder="I did ... I expected ... but I got ..."
+          disabled
+        ></textarea>
+      </label>
       <button>Send</button>
     </div>
 
     <script type="module">
-      import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.18.0/firebase-app.js'
-      import { getAuth } from 'https://www.gstatic.com/firebasejs/9.18.0/firebase-auth.js'
-      import { getFirestore } from 'https://www.gstatic.com/firebasejs/9.18.0/firebase-firestore.js'
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/9.18.0/firebase-app.js";
+      import { getAuth } from "https://www.gstatic.com/firebasejs/9.18.0/firebase-auth.js";
+      import {
+        getFirestore,
+        serverTimestamp,
+      } from "https://www.gstatic.com/firebasejs/9.18.0/firebase-firestore.js";
 
       const firebaseConfig = {
         apiKey: "AIzaSyCmksKb8ymTVLsTrkCGQxbtdViOjEBpXtA",
@@ -25,28 +35,28 @@
         projectId: "jayen-chat",
         storageBucket: "jayen-chat.appspot.com",
         messagingSenderId: "95320847991",
-        appId: "1:95320847991:web:53ba979442a96110323872"
+        appId: "1:95320847991:web:53ba979442a96110323872",
       };
       const app = initializeApp(firebaseConfig);
       const auth = getAuth(app);
       const db = getFirestore(app);
 
       // If user has name in localStorage, use it
-      const name = localStorage.getItem('name') || '';
+      const name = localStorage.getItem("name") || "";
       const nameInput = document.querySelector('input[type="text"]');
       nameInput.value = name;
       // If user has name, enable message input
       if (name) {
-        document.querySelector('textarea').disabled = false;
+        document.querySelector("textarea").disabled = false;
       } else {
         // If user doesn't have name, ask for it
         nameInput.readOnly = false;
-        nameInput.addEventListener('change', (e) => {
+        nameInput.addEventListener("change", function (e) {
           const name = e.target.value;
-          localStorage.setItem('name', name);
-          document.querySelector('textarea').disabled = false;
+          localStorage.setItem("name", name);
+          document.querySelector("textarea").disabled = false;
         });
-        nameInput.addEventListener('blur', (e) => {
+        nameInput.addEventListener("blur", function (e) {
           nameInput.readOnly = true;
         });
       }
