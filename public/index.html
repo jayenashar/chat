@@ -83,6 +83,7 @@
             signInWithPopup(auth, provider)
               .then(function () {
                 nameInput.removeEventListener("click", signIn);
+                messageInput.removeEventListener("click", signIn);
               })
               .catch(function (error) {
                 console.error(error);
@@ -90,6 +91,7 @@
               });
           };
           nameInput.addEventListener("click", signIn);
+          messageInput.addEventListener("click", signIn);
         }
       });
 
