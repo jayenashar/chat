@@ -107,7 +107,7 @@ but I got ...`;
       const send = function () {
         const name = nameInput.textContent;
         const message = messageInput.innerHTML;
-        if (message) {
+        if (message && messageInput.contentEditable && !messageInput.classList.contains("placeholder")) {
           addDoc(messagesCollection, {
             name,
             message,
