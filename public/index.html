@@ -123,8 +123,13 @@ but I got ...`;
               messageInput.innerHTML = message;
             }
           });
-          messageInput.innerHTML = messagePlaceholder;
-          messageInput.classList.add("placeholder");
+          // if messageInput has focus, clear it
+          if (document.activeElement.isEqualNode(messageInput)) {
+            messageInput.innerHTML = "";
+          } else {
+            messageInput.innerHTML = messagePlaceholder;
+            messageInput.classList.add("placeholder");
+          }
         }
       };
       button.addEventListener("click", send);
