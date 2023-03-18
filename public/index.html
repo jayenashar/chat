@@ -54,6 +54,7 @@
       const button = document.querySelector("button");
 
       let uid = null;
+      let stopReadingMessages = function () {};
       onAuthStateChanged(auth, function (user) {
         if (user) {
           // User is signed in.
@@ -68,6 +69,7 @@
             nameInput.removeEventListener("click", signOut);
           };
           nameInput.addEventListener("click", signOut);
+          startReadingMessages();
         } else {
           // No user is signed in.
           messageInput.contentEditable = false;
@@ -92,6 +94,7 @@
           };
           nameInput.addEventListener("click", signIn);
           messageInput.addEventListener("click", signIn);
+          stopReadingMessages();
         }
       });
 
@@ -154,45 +157,49 @@ but I got ...`;
         orderBy("timestamp", "desc"),
         limit(101)
       );
-      // TODO: start listening on sign in
-      onSnapshot(q, function (querySnapshot) {
-        const currentScroll = messages.scrollTop;
-        const maxScroll = messages.scrollHeight - messages.clientHeight;
-        messages.innerHTML = "";
-        querySnapshot.forEach(function (doc) {
-          const data = doc.data();
-          // random colour based on hash of lowercase of letters in name
-          const hash = data.name
-            .toLowerCase()
-            .replace(/[^a-z]/g, "")
-            .split("")
-            .reduce(function (acc, char) {
-              return 26 * acc + char.charCodeAt(0) - 'a'.charCodeAt(0);
-            }, 0);
-          const hue = hash % 360;
-          // replace <br> with newlines and < and > with &lt; and &gt; (though < and > is not part of textContent)
-          const text = data.message.replace(/<br.*?>/g, "\n").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      function startReadingMessages() {
+        stopReadingMessages = onSnapshot(q, function (querySnapshot) {
+          const currentScroll = messages.scrollTop;
+          const maxScroll = messages.scrollHeight - messages.clientHeight;
+          messages.innerHTML = "";
+          querySnapshot.forEach(function (doc) {
+            const data = doc.data();
+            // random colour based on hash of lowercase of letters in name
+            const hash = data.name
+              .toLowerCase()
+              .replace(/[^a-z]/g, "")
+              .split("")
+              .reduce(function (acc, char) {
+                return 26 * acc + char.charCodeAt(0) - "a".charCodeAt(0);
+              }, 0);
+            const hue = hash % 360;
+            // replace <br> with newlines and < and > with &lt; and &gt; (though < and > is not part of textContent)
+            const text = data.message
+              .replace(/<br.*?>/g, "\n")
+              .replace(/</g, "&lt;")
+              .replace(/>/g, "&gt;");
 
-          const message = document.createElement("div");
-          message.classList.add("message");
-          message.innerHTML = `
-            <span class="timestamp">
-              ${(data.timestamp?.toDate() ?? new Date()).toLocaleString()}
-              </span>
-            <span class="name" style="color: hsl(${hue}, 100%, 80%)">
-              ${data.name}
-          </span>
-            <span class="text">${text}</span>
-          `;
-          // prepend
-          messages.prepend(message);
+            const message = document.createElement("div");
+            message.classList.add("message");
+            message.innerHTML = `
+                  <span class="timestamp">
+                    ${(data.timestamp?.toDate() ?? new Date()).toLocaleString()}
+                    </span>
+                  <span class="name" style="color: hsl(${hue}, 100%, 80%)">
+                    ${data.name}
+                </span>
+                  <span class="text">${text}</span>
+                `;
+            // prepend
+            messages.prepend(message);
+          });
+          // TODO: handle the case when there are more than 101 messages and the user is scrolled up and old messages are hidden
+          if (currentScroll === maxScroll) {
+            getComputedStyle(messages); // force reflow
+            messages.scrollTop = messages.scrollHeight - messages.clientHeight;
+          }
         });
-        // TODO: handle the case when there are more than 101 messages and the user is scrolled up and old messages are hidden
-        if (currentScroll === maxScroll) {
-          getComputedStyle(messages); // force reflow
-          messages.scrollTop = messages.scrollHeight - messages.clientHeight;
-        }
-      });
+      }
     </script>
   </body>
 </html>
