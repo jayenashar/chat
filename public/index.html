@@ -34,7 +34,12 @@
         addDoc,
         collection,
         getFirestore,
+        limit,
+        onSnapshot,
+        orderBy,
+        query,
         serverTimestamp,
+        where,
       } from "https://www.gstatic.com/firebasejs/9.18.0/firebase-firestore.js";
 
       const firebaseConfig = {
@@ -131,6 +136,29 @@
             send();
           }
         }
+      });
+
+      // Get messages
+      const messages = document.querySelector(".messages");
+      const q = query(
+        messagesCollection,
+        where("chatRoom", "==", location.origin),
+        orderBy("timestamp", "desc"),
+        limit(101)
+      );
+      onSnapshot(q, function (querySnapshot) {
+        messages.innerHTML = "";
+        querySnapshot.forEach(function (doc) {
+          const data = doc.data();
+          const message = document.createElement("div");
+          message.classList.add("message");
+          message.innerHTML = `
+            <div class="name">${data.name}</div>
+            <div class="message">${data.message}</div>
+          `;
+          // prepend
+          messages.prepend(message);
+        });
       });
     </script>
   </body>

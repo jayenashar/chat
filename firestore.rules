@@ -14,6 +14,7 @@ service cloud.firestore {
       request.resource.data.message.size() > 0 &&
       request.resource.data.message.size() <= 10125 &&
       request.resource.data.name == request.auth.token.name;
+      allow read: if request.auth.token.firebase.sign_in_provider == 'google.com';
     }
   }
 }
