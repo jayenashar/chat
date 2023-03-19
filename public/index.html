@@ -55,6 +55,7 @@
 
       let uid = null;
       let stopReadingMessages = function () {};
+      // TODO: make separate JS files handling each part of the app (auth, read messages, send messages, etc.)
       onAuthStateChanged(auth, function (user) {
         if (user) {
           // User is signed in.

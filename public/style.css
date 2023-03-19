@@ -12,9 +12,11 @@ body {
     font-family: 'Roboto', sans-serif;
 }
 
-* {
-    background: black;
-    color: white;
+@media (prefers-color-scheme: dark) {
+    * {
+        background: black;
+        color: white;
+    }
 }
 
 .messages {
@@ -45,7 +47,7 @@ body {
     /* make a span look like a text input */
     display: inline-block;
     padding: 0.5em;
-    border: 1px solid white;
+    border: 1px solid black;
     border-radius: 0.25em;
 }
 
@@ -53,11 +55,21 @@ body {
     /* make a span look like a textarea */
     display: inline-block;
     padding: 0.5em;
-    border: 1px solid white;
+    border: 1px solid black;
     border-radius: 0.25em;
     resize: vertical;
     min-height: 3.6em;
     line-height: 1.2em;
+}
+
+@media (prefers-color-scheme: dark) {
+    .new-message .name {
+        border-color: white;
+    }
+
+    .new-message .text {
+        border-color: white;
+    }
 }
 
 textarea {
