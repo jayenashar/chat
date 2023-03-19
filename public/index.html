@@ -108,8 +108,10 @@ I expected ...
 but I got ...`;
       messageInput.innerHTML = messagePlaceholder;
       const send = function () {
+        // textContent doesn't include line breaks.  innerHTML includes rich HTML and line breaks as <br/>, innerText includes line breaks as \r
+        // any of the 3 can be used to set the value of the span, but we want innerText can be used to get the value of the span
         const name = nameInput.textContent;
-        const message = messageInput.innerHTML;
+        const message = messageInput.innerText;
         if (
           message &&
           messageInput.contentEditable &&
@@ -123,7 +125,7 @@ but I got ...`;
             uid,
           }).catch(function (error) {
             console.error("Error adding document: ", error);
-            const newMessage = messageInput.textContent;
+            const newMessage = messageInput.innerText;
             if (newMessage) {
               messageInput.innerHTML = message + "\n\n" + newMessage;
             } else {
@@ -155,7 +157,7 @@ but I got ...`;
         messageInput.classList.remove("placeholder");
       });
       messageInput.addEventListener("blur", function () {
-        if (!messageInput.textContent) {
+        if (!messageInput.innerText) {
           messageInput.innerHTML = messagePlaceholder;
           messageInput.classList.add("placeholder");
         }
@@ -185,7 +187,7 @@ but I got ...`;
                 return 26 * acc + char.charCodeAt(0) - "a".charCodeAt(0);
               }, 0);
             const hue = hash % 360;
-            // replace <br> with newlines and < and > with &lt; and &gt; (though < and > is not part of textContent)
+            // replace <br> with newlines and < and > with &lt; and &gt; (though < and > is not part of innerText)
             const text = data.message
               .replace(/<br.*?>/g, "\n")
               .replace(/</g, "&lt;")
