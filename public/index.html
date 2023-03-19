@@ -80,9 +80,11 @@
             // login with google
             const provider = new GoogleAuthProvider();
             const login_hint = localStorage.getItem("login_hint");
-            provider.setCustomParameters({
-              login_hint,
-            });
+            if (login_hint?.endsWith("@students.mq.edu.au")) {
+              provider.setCustomParameters({
+                login_hint,
+              });
+            }
             signInWithPopup(auth, provider)
               .then(function () {
                 nameInput.removeEventListener("click", signIn);
@@ -108,7 +110,11 @@ but I got ...`;
       const send = function () {
         const name = nameInput.textContent;
         const message = messageInput.innerHTML;
-        if (message && messageInput.contentEditable && !messageInput.classList.contains("placeholder")) {
+        if (
+          message &&
+          messageInput.contentEditable &&
+          !messageInput.classList.contains("placeholder")
+        ) {
           addDoc(messagesCollection, {
             name,
             message,
