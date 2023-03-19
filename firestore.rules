@@ -1,20 +1,46 @@
 rules_version = '2';
 
-function isChatRoomValid(chatRoom) {
-  return chatRoom.matches('^http://localhost:\\d+$') ||
-  chatRoom.matches('^https://comp2110-2023-c0[17]\\.jayenashar\\.org$');
+function isAdmin(database, request) {
+  let doc = get(/databases/$(database)/documents/users/$(request.auth.uid));
+  return doc != null && doc.data.isAdmin;
+}
+
+function isChatRoomValid(database, request) {
+  let chatRoom = request.resource.data.chatRoom;
+  let time = request.time;
+  return isAdmin(database, request) ||
+  (
+    chatRoom == 'https://comp2110-2023-c07.jayenashar.org' &&
+    time.dayOfWeek() == 2 &&
+    4 <= time.hours() && time.hours() < 7
+  ) ||
+  (
+    chatRoom == 'https://comp2110-2023-c01.jayenashar.org' &&
+    time.dayOfWeek() == 2 &&
+    6 <= time.hours() && time.hours() < 9
+  );
+}
+
+function isValidUser(database, request) {
+  let token = request.auth.token;
+  return token.firebase.sign_in_provider == 'google.com' &&
+  (
+    token.email.matches('.*@students\\.mq\\.edu\\.au$') ||
+    isAdmin(database, request)
+  );
 }
 
 service cloud.firestore {
   match /databases/{database}/documents {
     match /messages/{mid} {
       allow create: if request.auth.uid == request.resource.data.uid &&
-      isChatRoomValid(request.resource.data.chatRoom) &&
+      isValidUser(database, request) &&
+      isChatRoomValid(database, request) &&
       request.resource.data.timestamp == request.time &&
       request.resource.data.message.size() > 0 &&
       request.resource.data.message.size() <= 10125 &&
       request.resource.data.name == request.auth.token.name;
-      allow read: if request.auth.token.firebase.sign_in_provider == 'google.com';
+      allow read: if isValidUser(database, request);
     }
   }
 }
