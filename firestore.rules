@@ -45,7 +45,7 @@ service cloud.firestore {
       allow update: if
         request.resource.data.uid == request.auth.uid &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['message']) &&
-        resource.data.message.split('')[0] != 'n' &&
+        resource.data.message[0] != '\n' &&
         resource.data.message.split('').hasAny(['\n']) &&
         request.resource.data.message == '\n' + resource.data.message;
       allow read: if isValidUser(database, request);
