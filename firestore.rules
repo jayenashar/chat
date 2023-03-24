@@ -33,13 +33,21 @@ function isValidUser(database, request) {
 service cloud.firestore {
   match /databases/{database}/documents {
     match /messages/{mid} {
-      allow create: if request.auth.uid == request.resource.data.uid &&
-      isValidUser(database, request) &&
-      isChatRoomValid(database, request) &&
-      request.resource.data.timestamp == request.time &&
-      request.resource.data.message.size() > 0 &&
-      request.resource.data.message.size() <= 10125 &&
-      request.resource.data.name == request.auth.token.name;
+      allow create: if
+        request.resource.data.keys().hasOnly(['uid', 'chatRoom', 'timestamp', 'message', 'name']) &&
+        request.resource.data.uid == request.auth.uid &&
+        isValidUser(database, request) &&
+        isChatRoomValid(database, request) &&
+        request.resource.data.timestamp == request.time &&
+        request.resource.data.message.size() > 0 &&
+        request.resource.data.message.size() <= 10125 &&
+        request.resource.data.name == request.auth.token.name;
+      allow update: if
+        request.resource.data.uid == request.auth.uid &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['message']) &&
+        resource.data.message.split('')[0] != 'n' &&
+        resource.data.message.split('').hasAny(['\n']) &&
+        request.resource.data.message == '\n' + resource.data.message;
       allow read: if isValidUser(database, request);
     }
   }

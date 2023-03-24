@@ -9,14 +9,26 @@ import {
 import {
     addDoc,
     collection,
+    doc,
+    getDoc,
     getFirestore,
     limit,
     onSnapshot,
     orderBy,
     query,
     serverTimestamp,
+    updateDoc,
     where,
 } from "https://www.gstatic.com/firebasejs/9.18.0/firebase-firestore.js";
+
+/**
+ * @typedef Message
+ * @property {string} name
+ * @property {string} message
+ * @property {firebase.firestore.Timestamp} timestamp
+ * @property {string} chatRoom
+ * @property {string} uid
+ */
 
 const firebaseConfig = {
     apiKey: "AIzaSyCmksKb8ymTVLsTrkCGQxbtdViOjEBpXtA",
@@ -158,7 +170,8 @@ function startReadingMessages() {
         const currentScroll = messages.scrollTop;
         const maxScroll = messages.scrollHeight - messages.clientHeight;
         messages.innerHTML = "";
-        querySnapshot.forEach(function (doc) {
+        querySnapshot.forEach(function (/** @type firebase. */ doc) {
+            /** @type Message */
             const data = doc.data();
             // random colour based on hash of lowercase of letters in name
             const hash = data.name
@@ -178,12 +191,9 @@ function startReadingMessages() {
             const message = document.createElement("div");
             message.classList.add("message");
             message.innerHTML = `
-            <span class="timestamp">
-              ${(data.timestamp?.toDate() ?? new Date()).toLocaleString()}
-              </span>
-            <span class="name" style="color: hsl(${hue}, 100%, 80%)">
-              ${data.name}
-          </span>
+            <span class="timestamp">${(data.timestamp?.toDate() ?? new Date()).toLocaleString()}</span>
+            <span class="name" style="color: hsl(${hue}, 100%, 80%)">${data.name}</span>
+            ${data.uid === uid && text.charAt(0) !== '\n' && text.includes('\n')? `<button class="newline" data-path="${doc.ref.path}">⏎</button>` : ""}
             <span class="text">${text}</span>
           `;
             // prepend
@@ -195,3 +205,18 @@ function startReadingMessages() {
         }
     });
 }
+document.addEventListener("click", function (e) {
+    if (e.target instanceof HTMLButtonElement && e.target.classList.contains("newline")) {
+        e.preventDefault();
+        const path = e.target.getAttribute("data-path");
+        const document = doc(db, path);
+        getDoc(document).then(function (doc) {
+            const data = doc.data();
+            const oldMessage = data.message;
+            const message = '\n' + oldMessage;
+            updateDoc(document, { message }).catch(function (error) {
+                console.error("Error updating document: ", error);
+            });
+        });
+    }
+});
