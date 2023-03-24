@@ -31,6 +31,7 @@ body {
 
 .text {
     white-space: pre-wrap;
+    font-family: 'Roboto Mono', monospace;
 }
 
 .new-message {
