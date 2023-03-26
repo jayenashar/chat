@@ -43,33 +43,23 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 // get user from firebase-auth
-const nameInput = document.querySelector(".new-message .name");
 const messageInput = document.querySelector(".new-message .text");
-const button = document.querySelector("button");
 
 let uid = null;
 let stopReadingMessages = function () { };
 
+// manage body element
 onAuthStateChanged(auth, function (user) {
     if (user) {
-        // User is signed in.
-        nameInput.innerHTML = user.displayName;
-        nameInput.classList.remove("placeholder");
+        document.body.classList.add("signed-in");
         localStorage.setItem("login_hint", user.email);
-        messageInput.contentEditable = true;
-        button.disabled = false;
-        uid = user.uid;
-        const signOut = function () {
-            auth.signOut();
-            nameInput.removeEventListener("click", signOut);
-        };
-        nameInput.addEventListener("click", signOut);
-        startReadingMessages();
+        // const signOut = function () {
+        //     auth.signOut();
+        //     document.body.removeEventListener("click", signOut);
+        // };
+        // document.body.addEventListener("click", signOut);
     } else {
-        // No user is signed in.
-        messageInput.contentEditable = false;
-        button.disabled = true;
-        uid = null;
+        document.body.classList.remove("signed-in");
         const signIn = function () {
             // login with google
             const provider = new GoogleAuthProvider();
@@ -81,16 +71,32 @@ onAuthStateChanged(auth, function (user) {
             }
             signInWithPopup(auth, provider)
                 .then(function () {
-                    nameInput.removeEventListener("click", signIn);
-                    messageInput.removeEventListener("click", signIn);
+                    document.body.removeEventListener("click", signIn);
                 })
                 .catch(function (error) {
                     console.error(error);
                     alert(error.toString());
                 });
         };
-        nameInput.addEventListener("click", signIn);
-        messageInput.addEventListener("click", signIn);
+        document.body.addEventListener("click", signIn);
+    }
+});
+
+// manage name element
+onAuthStateChanged(auth, function (user) {
+    if (user) {
+        const name = document.querySelector("option.name");
+        name.value = user.displayName;
+        name.innerHTML = user.displayName;
+    }
+});
+
+onAuthStateChanged(auth, function (user) {
+    if (user) {
+        uid = user.uid;
+        startReadingMessages();
+    } else {
+        uid = null;
         stopReadingMessages();
     }
 });
@@ -104,7 +110,7 @@ messageInput.innerHTML = messagePlaceholder;
 const send = function () {
     // textContent doesn't include line breaks.  innerHTML includes rich HTML and line breaks as <br/>, innerText includes line breaks as \r
     // any of the 3 can be used to set the value of the span, but we want innerText can be used to get the value of the span
-    const name = nameInput.textContent;
+    const name = document.querySelector("select.name").value;
     const message = messageInput.innerText;
     if (
         message &&
@@ -135,7 +141,7 @@ const send = function () {
         }
     }
 };
-button.addEventListener("click", send);
+document.querySelector('.new-message button').addEventListener("click", send);
 messageInput.addEventListener("keydown", function (e) {
     if (e.key === "Enter") {
         if (!e.shiftKey && !e.ctrlKey && !e.altKey) {

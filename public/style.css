@@ -19,6 +19,14 @@ body {
     }
 }
 
+body:not(.signed-in) {
+    opacity: 0.5;
+}
+
+body:not(.signed-in) * {
+    pointer-events: none;
+}
+
 .messages {
     overflow-y: auto;
 }

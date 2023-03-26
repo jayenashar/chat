@@ -30,6 +30,11 @@ function isValidUser(database, request) {
   );
 }
 
+function isValidName(request) {
+  let name = request.resource.data.name;
+  return name == request.auth.token.name || name == 'Anonymous';
+}
+
 service cloud.firestore {
   match /databases/{database}/documents {
     match /messages/{mid} {
@@ -41,7 +46,7 @@ service cloud.firestore {
         request.resource.data.timestamp == request.time &&
         request.resource.data.message.size() > 0 &&
         request.resource.data.message.size() <= 10125 &&
-        request.resource.data.name == request.auth.token.name;
+        isValidName(request);
       allow update: if
         request.resource.data.uid == request.auth.uid &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['message']) &&
