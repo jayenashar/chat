@@ -32,7 +32,7 @@ function isValidUser(database, request) {
 
 function isValidName(request) {
   let name = request.resource.data.name;
-  return name == request.auth.token.name || name == 'Anonymous';
+  return name == request.auth.token.name || name == 'User';
 }
 
 service cloud.firestore {
