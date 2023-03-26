@@ -108,9 +108,9 @@ I expected ...
 but I got ...`;
 messageInput.innerHTML = messagePlaceholder;
 const send = function () {
+    const name = document.querySelector("select.name").value;
     // textContent doesn't include line breaks.  innerHTML includes rich HTML and line breaks as <br/>, innerText includes line breaks as \r
     // any of the 3 can be used to set the value of the span, but we want innerText can be used to get the value of the span
-    const name = document.querySelector("select.name").value;
     const message = messageInput.innerText;
     if (
         message &&
@@ -188,18 +188,23 @@ function startReadingMessages() {
                     return 26 * acc + char.charCodeAt(0) - "a".charCodeAt(0);
                 }, 0);
             const hue = hash % 360;
-            // replace <br> with newlines and < and > with &lt; and &gt; (though < and > is not part of innerText)
             const text = data.message
+            // replace <br> with newlines
                 .replace(/<br.*?>/g, "\n")
+                // replace < and > with &lt; and &gt; (though < and > is not part of innerText)
                 .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;");
+                .replace(/>/g, "&gt;")
+                // remove trailing whitespace
+                .replace(/[^\S\r\n]+$/gm, "")
+                // collapse multiple newlines into two
+                .replace(/\n{3,}/g, "\n\n");
 
             const message = document.createElement("div");
             message.classList.add("message");
             message.innerHTML = `
             <span class="timestamp">${(data.timestamp?.toDate() ?? new Date()).toLocaleString()}</span>
             <span class="name" style="color: hsl(${hue}, 100%, 80%)">${data.name}</span>
-            ${data.uid === uid && text.charAt(0) !== '\n' && text.includes('\n')? `<button class="newline" data-path="${doc.ref.path}">⏎</button>` : ""}
+            ${data.uid === uid && text.charAt(0) !== '\n' && text.includes('\n') ? `<button class="newline" data-path="${doc.ref.path}">⏎</button>` : ""}
             <span class="text">${text}</span>
           `;
             // prepend
