@@ -1,51 +1,55 @@
 rules_version = '2';
 
-function isAdmin(database, request) {
-  let doc = get(/databases/$(database)/documents/users/$(request.auth.uid));
-  return doc != null && doc.data.isAdmin;
-}
-
-function isChatRoomValid(database, request) {
-  let chatRoom = request.resource.data.chatRoom;
-  let time = request.time;
-  return isAdmin(database, request) ||
-  (
-    chatRoom == 'https://comp2110-2023-c07.jayenashar.org' &&
-    time.dayOfWeek() == 2 &&
-    4 <= time.hours() && time.hours() < 7
-  ) ||
-  (
-    chatRoom == 'https://comp2110-2023-c01.jayenashar.org' &&
-    time.dayOfWeek() == 2 &&
-    6 <= time.hours() && time.hours() < 9
-  );
-}
-
-function isValidUser(database, request) {
-  let token = request.auth.token;
-  return token.firebase.sign_in_provider == 'google.com' &&
-  (
-    token.email.matches('.*@students\\.mq\\.edu\\.au$') ||
-    isAdmin(database, request)
-  );
-}
-
-function isValidName(request) {
-  let name = request.resource.data.name;
-  return name == request.auth.token.name || name == 'User';
-}
-
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isAdmin(request) {
+      let doc = get(/databases/(default)/documents/users/$(request.auth.uid));
+      return doc != null && doc.data.isAdmin;
+    }
+
+    function isChatRoomValid(request) {
+      let chatRoom = request.resource.data.chatRoom;
+      let time = request.time;
+      return isAdmin(request) ||
+      (
+        chatRoom == 'https://comp2110-2023-c07.jayenashar.org' &&
+        time.dayOfWeek() == 2 &&
+        4 <= time.hours() && time.hours() < 7
+      ) ||
+      (
+        chatRoom == 'https://comp2110-2023-c01.jayenashar.org' &&
+        time.dayOfWeek() == 2 &&
+        6 <= time.hours() && time.hours() < 9
+      );
+    }
+
+    function isValidUser(request) {
+      let token = request.auth.token;
+      return token.firebase.sign_in_provider == 'google.com' &&
+      (
+        token.email.matches('.*@students\\.mq\\.edu\\.au$') ||
+        isAdmin(request)
+      );
+    }
+
+    function isValidName(request) {
+      let name = request.resource.data.name;
+      return name == request.auth.token.name || name == 'User';
+    }
+
+    function isValidMessage(data) {
+      return 'message' in data && !('image' in data) && data.message.size() > 0 && data.message.size() <= 10125 ||
+             'image' in data && !('message' in data) && data.image;
+    }
+
     match /messages/{mid} {
       allow create: if
-        request.resource.data.keys().hasOnly(['uid', 'chatRoom', 'timestamp', 'message', 'name']) &&
+        request.resource.data.keys().hasOnly(['uid', 'chatRoom', 'timestamp', 'message', 'image', 'name']) &&
         request.resource.data.uid == request.auth.uid &&
-        isValidUser(database, request) &&
-        isChatRoomValid(database, request) &&
+        isValidUser(request) &&
+        isChatRoomValid(request) &&
         request.resource.data.timestamp == request.time &&
-        request.resource.data.message.size() > 0 &&
-        request.resource.data.message.size() <= 10125 &&
+        isValidMessage(request.resource.data) &&
         isValidName(request);
       allow update: if
         request.resource.data.uid == request.auth.uid &&
@@ -53,7 +57,7 @@ service cloud.firestore {
         resource.data.message[0] != '\n' &&
         resource.data.message.split('').hasAny(['\n']) &&
         request.resource.data.message == '\n' + resource.data.message;
-      allow read: if isValidUser(database, request);
+      allow read: if isValidUser(request);
     }
   }
 }

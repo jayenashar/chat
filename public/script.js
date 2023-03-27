@@ -20,6 +20,7 @@ import {
     updateDoc,
     where,
 } from "https://www.gstatic.com/firebasejs/9.18.0/firebase-firestore.js";
+import { getDownloadURL, getStorage, ref, uploadBytes } from "https://www.gstatic.com/firebasejs/9.18.0/firebase-storage.js";
 
 /**
  * @typedef Message
@@ -41,6 +42,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const storage = getStorage();
 
 // get user from firebase-auth
 const messageInput = document.querySelector(".new-message .text");
@@ -101,6 +103,37 @@ onAuthStateChanged(auth, function (user) {
     }
 });
 
+// Paste image
+messageInput.addEventListener("paste", function (e) {
+    if (e.clipboardData) {
+        const items = e.clipboardData.items;
+        if (items) {
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.indexOf("image") !== -1) {
+                    // image
+                    const blob = items[i].getAsFile();
+                    e.preventDefault();
+                    addDoc(messagesCollection, {
+                        name: document.querySelector("select.name").value,
+                        image: true,
+                        timestamp: serverTimestamp(),
+                        chatRoom: location.origin,
+                        uid,
+                    }).then(function (docRef) {
+                        console.log("Document written with ID: ", docRef.id);
+                        const imageRef = ref(storage, `images/${docRef.id}`);
+                        uploadBytes(imageRef, blob).then(function () {
+                            console.log("Image uploaded");
+                        }).catch(function (error) {
+                            console.error("Error uploading image: ", error);
+                        });
+                    });
+                }
+            }
+        }
+    }
+});
+
 // Send message
 const messagesCollection = collection(db, "messages");
 const messagePlaceholder = `I did ...
@@ -150,6 +183,8 @@ messageInput.addEventListener("keydown", function (e) {
         }
     }
 });
+
+// manage placeholder
 messageInput.addEventListener("focus", function () {
     if (messageInput.classList.contains("placeholder")) {
         messageInput.innerHTML = "";
@@ -172,6 +207,7 @@ const q = query(
     limit(101)
 );
 function startReadingMessages() {
+    const imagesURL = {};
     stopReadingMessages = onSnapshot(q, function (querySnapshot) {
         const currentScroll = messages.scrollTop;
         const maxScroll = messages.scrollHeight - messages.clientHeight;
@@ -189,8 +225,8 @@ function startReadingMessages() {
                 }, 0);
             const hue = hash % 360;
             const text = data.message
-            // replace <br> with newlines
-                .replace(/<br.*?>/g, "\n")
+                // replace <br> with newlines
+                ?.replace(/<br.*?>/g, "\n")
                 // replace < and > with &lt; and &gt; (though < and > is not part of innerText)
                 .replace(/</g, "&lt;")
                 .replace(/>/g, "&gt;")
@@ -198,14 +234,20 @@ function startReadingMessages() {
                 .replace(/[^\S\r\n]+$/gm, "")
                 // collapse multiple newlines into two
                 .replace(/\n{3,}/g, "\n\n");
+            const image = data.image;
 
             const message = document.createElement("div");
             message.classList.add("message");
             message.innerHTML = `
             <span class="timestamp">${(data.timestamp?.toDate() ?? new Date()).toLocaleString()}</span>
             <span class="name" style="color: hsl(${hue}, 100%, 80%)">${data.name}</span>
-            ${data.uid === uid && text.charAt(0) !== '\n' && text.includes('\n') ? `<button class="newline" data-path="${doc.ref.path}">⏎</button>` : ""}
-            <span class="text">${text}</span>
+            ${data.uid === uid && text && text.charAt(0) !== '\n' && text.includes('\n') ? `<button class="newline" data-path="${doc.ref.path}">⏎</button>` : ""}
+            ${image && !text ?
+                    imagesURL[data.id] ?
+                        `<img src="${imagesURL[data.id]}" />` :
+                        `<img data-id="${doc.id}" />` :
+                    ""}
+            ${text && !image ? `<span class="text">${text}</span>` : ""}
           `;
             // prepend
             messages.prepend(message);
@@ -213,6 +255,23 @@ function startReadingMessages() {
         if (currentScroll === maxScroll) {
             getComputedStyle(messages); // force reflow
             messages.scrollTop = messages.scrollHeight - messages.clientHeight;
+        }
+        // set src of images
+        const images = messages.querySelectorAll("img[data-id]:not([src])");
+        for (let i = 0; i < images.length; i++) {
+            const image = images[i];
+            const id = image.getAttribute("data-id");
+            const path = `images/${id}`;
+            getDownloadURL(ref(storage, path)).then(function (url) {
+                image.setAttribute("src", url);
+                imagesURL[id] = url;
+                image.addEventListener("load", function () {
+                    if (currentScroll === maxScroll) {
+                        getComputedStyle(messages); // force reflow
+                        messages.scrollTop = messages.scrollHeight - messages.clientHeight;
+                    }
+                });
+            });
         }
     });
 }

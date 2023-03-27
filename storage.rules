@@ -1,0 +1,40 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isAdmin(request) {
+      let doc = firestore.get(/databases/(default)/documents/users/$(request.auth.uid));
+      return doc != null && doc.data.isAdmin;
+    }
+
+    function isValidUser(request) {
+      let token = request.auth.token;
+      return token.firebase.sign_in_provider == 'google.com' &&
+      (
+        token.email.matches('.*@students\\.mq\\.edu\\.au$') ||
+        isAdmin(request)
+      );
+    }
+
+    function isValidMessage(message) {
+      return message != null && message.image == true;
+    }
+
+    function isValidGet(request, messageID) {
+      let doc = firestore.get(/databases/(default)/documents/messages/$(messageID));
+      return isValidUser(request) && isValidMessage(doc.data);
+    }
+
+    function isValidCreate(request, messageID) {
+      let doc = firestore.get(/databases/(default)/documents/messages/$(messageID));
+      return isValidUser(request) && isValidMessage(doc.data) &&
+        request.resource.contentType.matches('image/.*') &&
+        request.resource.size < 10 * 1024 * 1024 &&
+        request.auth.uid == doc.data.uid;
+    }
+
+    match /images/{imageID} {
+      allow get: if isValidGet(request, imageID);
+      allow create: if isValidCreate(request, imageID);
+    }
+  }
+}
