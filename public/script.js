@@ -211,20 +211,11 @@ function startReadingMessages() {
     stopReadingMessages = onSnapshot(q, function (querySnapshot) {
         const currentScroll = messages.scrollTop;
         const maxScroll = messages.scrollHeight - messages.clientHeight;
-        messages.innerHTML = "";
-        querySnapshot.forEach(function (/** @type firebase. */ doc) {
+        querySnapshot.docChanges().reverse().forEach(function (change) {
+            const doc = change.doc;
             /** @type Message */
             const data = doc.data();
-            // random colour based on hash of lowercase of letters in name
-            const hash = data.name
-                .toLowerCase()
-                .replace(/[^a-z]/g, "")
-                .split("")
-                .reduce(function (acc, char) {
-                    return 26 * acc + char.charCodeAt(0) - "a".charCodeAt(0);
-                }, 0);
-            const hue = hash % 360;
-            const text = data.message
+            const text = data?.message
                 // replace <br> with newlines
                 ?.replace(/<br.*?>/g, "\n")
                 // replace < and > with &lt; and &gt; (though < and > is not part of innerText)
@@ -234,23 +225,40 @@ function startReadingMessages() {
                 .replace(/[^\S\r\n]+$/gm, "")
                 // collapse multiple newlines into two
                 .replace(/\n{3,}/g, "\n\n");
-            const image = data.image;
-
-            const message = document.createElement("div");
-            message.classList.add("message");
-            message.innerHTML = `
-            <span class="timestamp">${(data.timestamp?.toDate() ?? new Date()).toLocaleString()}</span>
-            <span class="name" style="color: hsl(${hue}, 100%, 80%)">${data.name}</span>
-            ${data.uid === uid && text && text.charAt(0) !== '\n' && text.includes('\n') ? `<button class="newline" data-path="${doc.ref.path}">⏎</button>` : ""}
-            ${image && !text ?
-                    imagesURL[data.id] ?
-                        `<img src="${imagesURL[data.id]}" />` :
-                        `<img data-id="${doc.id}" />` :
-                    ""}
-            ${text && !image ? `<span class="text">${text}</span>` : ""}
-          `;
-            // prepend
-            messages.prepend(message);
+            if (change.type === "added") {
+                // random colour based on hash of lowercase of letters in name
+                const hash = data.name
+                    .toLowerCase()
+                    .replace(/[^a-z]/g, "")
+                    .split("")
+                    .reduce(function (acc, char) {
+                        return 26 * acc + char.charCodeAt(0) - "a".charCodeAt(0);
+                    }, 0);
+                const hue = hash % 360;
+                const image = data.image;
+                const message = `
+                <div class="message" data-id="${doc.id}">
+                    <span class="timestamp">${(data.timestamp?.toDate() ?? new Date()).toLocaleString()}</span>
+                    <span class="name" style="color: hsl(${hue}, 100%, 80%)">${data.name}</span>
+                    ${data.uid === uid && text && text.charAt(0) !== '\n' && text.includes('\n') ? `<button class="newline" data-path="${doc.ref.path}">⏎</button>` : ""}
+                    ${image && !text ?
+                        imagesURL[doc.id] ?
+                            `<img src="${imagesURL[doc.id]}" />` :
+                            `<img data-id="${doc.id}" />` :
+                        ""}
+                    ${text && !image ? `<span class="text">${text}</span>` : ""}
+                </div>
+                `;
+                messages.insertAdjacentHTML("beforeend", message);
+            }
+            if (change.type === "modified") {
+                if (!data.image) {
+                    document.querySelector(`.message[data-id="${doc.id}"] .text`).innerHTML = text;
+                }
+            }
+            if (change.type === "removed") {
+                document.querySelector(`.message[data-id="${doc.id}"]`).remove();
+            }
         });
         if (currentScroll === maxScroll) {
             getComputedStyle(messages); // force reflow
