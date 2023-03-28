@@ -270,16 +270,22 @@ function startReadingMessages() {
             const image = images[i];
             const id = image.getAttribute("data-id");
             const path = `images/${id}`;
-            getDownloadURL(ref(storage, path)).then(function (url) {
-                image.setAttribute("src", url);
-                imagesURL[id] = url;
-                image.addEventListener("load", function () {
-                    if (currentScroll === maxScroll) {
-                        getComputedStyle(messages); // force reflow
-                        messages.scrollTop = messages.scrollHeight - messages.clientHeight;
-                    }
+            setSrc();
+            function setSrc() {
+                getDownloadURL(ref(storage, path)).then(function (url) {
+                    image.setAttribute("src", url);
+                    imagesURL[id] = url;
+                    image.addEventListener("load", function () {
+                        if (currentScroll === maxScroll) {
+                            getComputedStyle(messages); // force reflow
+                            messages.scrollTop = messages.scrollHeight - messages.clientHeight;
+                        }
+                    });
+                }).catch(function (error) {
+                    console.log(`Error getting download URL: ${error}. Retrying...`);
+                    setTimeout(setSrc, 100);
                 });
-            });
+            }
         }
     });
 }
