@@ -298,7 +298,9 @@ document.addEventListener("click", function (e) {
             const data = doc.data();
             const oldMessage = data.message;
             const message = '\n' + oldMessage;
-            updateDoc(document, { message }).catch(function (error) {
+            updateDoc(document, { message }).then(function (){
+                e.target.remove();
+            }).catch(function (error) {
                 console.error("Error updating document: ", error);
             });
         });
