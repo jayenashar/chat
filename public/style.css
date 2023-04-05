@@ -42,6 +42,11 @@ body:not(.signed-in) * {
     font-family: 'Roboto Mono', monospace;
 }
 
+.message img {
+    max-width: 100vw;
+    max-height: 50vh;
+}
+
 .new-message {
     display: grid;
     grid-template-columns: auto 1fr auto;
