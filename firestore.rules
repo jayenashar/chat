@@ -1,5 +1,7 @@
 rules_version = '2';
 
+// dayOfWeek() returns 1 for Monday, 2 for Tuesday, etc.
+
 service cloud.firestore {
   match /databases/{database}/documents {
     function isAdmin(request) {
@@ -20,6 +22,18 @@ service cloud.firestore {
         chatRoom == 'https://comp2110-2023-c01.jayenashar.org' &&
         time.dayOfWeek() == 2 &&
         6 <= time.hours() && time.hours() < 9
+      ) ||
+      (
+        chatRoom == 'https://comp3120-2023-c03.jayenashar.org' &&
+        (
+          time.dayOfWeek() == 0 && 23 <= time.hours() ||
+          time.dayOfWeek() == 1 && time.hours() < 2
+        )
+      ) ||
+      (
+        chatRoom == 'https://comp3120-2023-c05.jayenashar.org' &&
+        time.dayOfWeek() == 1 &&
+        1 <= time.hours() && time.hours() < 4
       );
     }
 
