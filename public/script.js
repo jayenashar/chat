@@ -63,6 +63,9 @@ onAuthStateChanged(auth, function (user) {
     } else {
         document.body.classList.remove("signed-in");
         const signIn = function () {
+            if (Notification.permission !== "granted") {
+              Notification.requestPermission();
+            }
             // login with google
             const provider = new GoogleAuthProvider();
             const login_hint = localStorage.getItem("login_hint");
@@ -250,6 +253,16 @@ function startReadingMessages() {
                 </div>
                 `;
                 messages.insertAdjacentHTML("beforeend", message);
+                if (data.uid !== uid) {
+                    const notification = new Notification(`${data.name} said`, {
+                        body: text,
+                        icon: "free-message-1767815-1502395.png",
+                    });
+                    notification.addEventListener("click", function () {
+                        window.focus();
+                        notification.close();
+                    });
+                }
             }
             if (change.type === "modified") {
                 if (!data.image) {
